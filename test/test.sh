@@ -15,9 +15,9 @@ NC='\033[0m'
 
 remove_ansi_color() {
 	if [[ "$(uname)" == "Darwin" ]]; then
-		echo $(echo $1 | sed $'s,\x1b\\[[0-9;]*[a-zA-Z],,g')
+		echo "$(echo "$1" | sed $'s,\x1b\\[[0-9;]*[a-zA-Z],,g')"
 	else
-		echo $(echo $1 | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g")
+		echo "$(echo "$1" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g")"
 	fi
 }
 
@@ -35,7 +35,8 @@ on_success() {
 
 on_failure() {
 	((errors++))
-	echo -e "${RED}Error${NC}"
+	echo -e "${RED}Error${NC}:"
+    diff -u --color <(echo "$expected") <(echo "$output")
 }
 
 run_test() {
@@ -50,7 +51,7 @@ run_test() {
 	echo -e "\n$2"
 
 	# execute license-header-checker and remove colors
-	output=$(remove_ansi_color "$($CMD $flags $CMD_ARGS)")
+	output="$(remove_ansi_color "$($CMD $flags $CMD_ARGS)")"
 
 	# verify result
 	if [[ "$output" =~ "$expected" ]]; then
@@ -71,15 +72,15 @@ run_test "${flags}" "${test_case}" "$expected_output"
 # read only
 flags=''
 test_case='Testing read only...'
-expected_output="1 licenses ok, 0 licenses replaced, 0 licenses added \
-[!] 2 files had no license but were not changed as the -a (add) option was not supplied. \
+expected_output="1 licenses ok, 0 licenses replaced, 0 licenses added
+[!] 2 files had no license but were not changed as the -a (add) option was not supplied.
 [!] 2 files had a different license but were not changed as the -r (replace) option was not supplied."
 run_test "$flags" "$test_case" "$expected_output"
 
 # add
 flags='-a'
 test_case='Testing with -a flag...'
-expected_output="1 licenses ok, 0 licenses replaced, 2 licenses added \
+expected_output="1 licenses ok, 0 licenses replaced, 2 licenses added
 [!] 2 files had a different license but were not changed as the -r (replace) option was not supplied."
 run_test "$flags" "$test_case" "$expected_output"
 
@@ -99,9 +100,33 @@ run_test "$flags" "$test_case" "$expected_output"
 flags='-a -r -v -i src/other'
 test_case='Testing with -a and -r and -i and -v flags...'
 expected_output="\
-files: license_ok: - sample-project/src/file-with-license.js license_replaced: - sample-project/test/file-with-old-license.go - sample-project/src/file-with-old-license.cpp license_added: - sample-project/src/file-without-license.java \
-options: project_path: sample-project ignore_paths: - src/other extensions: - .java - .js - .cpp - .go flags: - add - replace - verbose license_header: %ssample-project/licenses/current-license.txt \
-totals: license_ok: 1 files license_replaced: 2 files license_added: 1 files elapsed_time: 0ms"
+files:
+  license_ok:
+    - sample-project/src/file-with-license.js
+  license_replaced:
+    - sample-project/src/file-with-old-license.cpp
+    - sample-project/test/file-with-old-license.go
+  license_added:
+    - sample-project/src/file-without-license.java
+options:
+  project_path: sample-project
+  ignore_paths:
+    - src/other
+  extensions:
+    - .java
+    - .js
+    - .cpp
+    - .go
+  flags:
+    - add
+    - replace
+    - verbose
+  license_header: %ssample-project/licenses/current-license.txt
+totals:
+  license_ok: 1 files
+  license_replaced: 2 files
+  license_added: 1 files
+  elapsed_time: 0ms"
 run_test "$flags" "$test_case" "$expected_output"
 
 delete_sample_project

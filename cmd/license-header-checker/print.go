@@ -25,6 +25,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/gookit/color"
 	"github.com/lluissm/license-header-checker/internal/options"
@@ -128,6 +129,7 @@ func printFiles(files []string, operationName string, render func(a ...interface
 		return
 	}
 	fmt.Printf("  %s:\n", operationName)
+	sort.Strings(files);
 	for _, file := range files {
 		fmt.Printf("    - %s\n", render(fmt.Sprintf("%v", file)))
 	}
