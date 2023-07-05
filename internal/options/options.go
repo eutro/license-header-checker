@@ -28,6 +28,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"regexp"
 
 	"github.com/lluissm/license-header-checker/pkg/process"
 )
@@ -55,6 +56,7 @@ func Parse(osArgs []string) (*Options, error) {
 	addFlag := flagSet.Bool("a", false, "Add the target license in case the file does not have any.")
 	replaceFlag := flagSet.Bool("r", false, "Replace the existing license by the target one in case they are different.")
 	ignorePathsFlag := flagSet.String("i", "", "A comma separated list of the folders, files and/or paths that should be ignored. Does not support wildcards.")
+	headerRegexFlag := flagSet.String("h", "", "A regular expression to match a header comment.")
 	verboseFlag := flagSet.Bool("v", false, "Be verbose during execution printing options, files being processed, execution time, ...")
 	showVersionFlag := flagSet.Bool("version", false, "Display version number")
 
@@ -73,6 +75,7 @@ func Parse(osArgs []string) (*Options, error) {
 	}
 
 	if len(args) < 3 {
+		flagSet.Usage()
 		return nil, errors.New("Missing arguments, please see documentation")
 	}
 
@@ -91,6 +94,15 @@ func Parse(osArgs []string) (*Options, error) {
 		}
 	}
 
+	var headerRegex *regexp.Regexp = nil
+	if headerRegexFlag != nil && len(*headerRegexFlag) > 0 {
+		headerRegex0, err := regexp.Compile(*headerRegexFlag)
+		if err != nil {
+			return nil, err
+		}
+		headerRegex = headerRegex0
+	}
+
 	processOptions := &process.Options{
 		Add:         *addFlag,
 		Replace:     *replaceFlag,
@@ -98,6 +110,7 @@ func Parse(osArgs []string) (*Options, error) {
 		LicensePath: licensePath,
 		Extensions:  extensions,
 		IgnorePaths: ignorePaths,
+		HeaderRegex: headerRegex,
 	}
 
 	return &Options{
